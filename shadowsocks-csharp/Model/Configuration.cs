@@ -63,8 +63,12 @@ namespace Shadowsocks.Model
                 return new Configuration
                 {
                     index = 0,
+                    global = false,
+                    enabled = true,
                     isDefault = true,
                     localPort = 1080,
+                    pacUrl = null,
+                    useOnlinePac = false,
                     configs = new List<Server>()
                     {
                         GetDefaultServer()
@@ -101,7 +105,22 @@ namespace Shadowsocks.Model
 
         public static Server GetDefaultServer()
         {
-            return new Server();
+            //return new Server()
+            //{
+            //    server = "210.56.51.21",
+            //    server_port = 443,
+            //    password = "good1234",
+            //    method = "aes-128-cfb",
+            //    remarks = "HK"
+            //};
+            return new Server()
+            {
+                server = "180.150.227.56",
+                server_port = 8388,
+                password = "gid+-3",
+                method = "aes-256-cfb",
+                remarks = "HK"
+            };
         }
 
         private static void Assert(bool condition)

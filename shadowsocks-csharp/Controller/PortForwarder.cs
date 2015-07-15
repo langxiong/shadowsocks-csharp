@@ -47,12 +47,12 @@ namespace Shadowsocks.Controller
                     IPAddress ipAddress;
                     bool parsed = IPAddress.TryParse("127.0.0.1", out ipAddress);
                     IPEndPoint remoteEP = new IPEndPoint(ipAddress, targetPort);
-
-
                     _remote = new Socket(ipAddress.AddressFamily,
                         SocketType.Stream, ProtocolType.Tcp);
                     _remote.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true);
-
+                    string msg = "[PortForwarder] BeginConnect remoteEP ";
+                    msg += remoteEP.Address.ToString();
+                    Logging.LogTrace(msg);
                     // Connect to the remote endpoint.
                     _remote.BeginConnect(remoteEP,
                         new AsyncCallback(ConnectCallback), null);
@@ -91,6 +91,9 @@ namespace Shadowsocks.Controller
                 try
                 {
                     _remote.BeginSend(_firstPacket, 0, _firstPacketLength, 0, new AsyncCallback(StartPipe), null);
+                    string msg = "[PortForwarder]  remote" + _remote.LocalEndPoint.ToString();
+                    msg += " begin send";
+                    Logging.LogTrace(msg);
                 }
                 catch (Exception e)
                 {
@@ -130,10 +133,13 @@ namespace Shadowsocks.Controller
                 try
                 {
                     int bytesRead = _remote.EndReceive(ar);
-
+                    string msg = "[PortForwarder] _remote[" + _remote.LocalEndPoint.ToString() + "] receive[" + bytesRead + "]";
+                    Logging.LogTrace(msg);
                     if (bytesRead > 0)
                     {
                         _local.BeginSend(remoteRecvBuffer, 0, bytesRead, 0, new AsyncCallback(PipeConnectionSendCallback), null);
+                        msg = "[PortForwarder] _local[" + _local.LocalEndPoint.ToString() + "] BeginSend[" + bytesRead + "]";
+                        Logging.LogTrace(msg);
                     }
                     else
                     {
@@ -159,10 +165,13 @@ namespace Shadowsocks.Controller
                 try
                 {
                     int bytesRead = _local.EndReceive(ar);
-
+                    string msg = "[PortForwarder] _local[" + _local.LocalEndPoint.ToString() + "] receive[" + bytesRead + "]";
+                    Logging.LogTrace(msg);
                     if (bytesRead > 0)
                     {
                         _remote.BeginSend(connetionRecvBuffer, 0, bytesRead, 0, new AsyncCallback(PipeRemoteSendCallback), null);
+                        msg = "[PortForwarder] _remote[" + _remote.LocalEndPoint.ToString() + "] send[" + bytesRead + "]";
+                        Logging.LogTrace(msg);
                     }
                     else
                     {

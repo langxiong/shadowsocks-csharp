@@ -10,25 +10,21 @@ namespace Shadowsocks.Controller
     {
         public static string LogFile;
 
-        public static bool OpenLogFile()
+        public static void LogTrace(string msg)
         {
-            try
-            {
-                string temppath = Path.GetTempPath();
-                LogFile = Path.Combine(temppath, "shadowsocks.log");
-                FileStream fs = new FileStream(LogFile, FileMode.Append);
-                StreamWriterWithTimestamp sw = new StreamWriterWithTimestamp(fs);
-                sw.AutoFlush = true;
-                Console.SetOut(sw);
-                Console.SetError(sw);
-                
-                return true;
-            }
-            catch (IOException e)
-            {
-                Console.WriteLine(e.ToString());
-                return false;
-            }
+            Console.WriteLine("Trace: " + msg);
+        }
+        public static void LogError(string msg)
+        {
+            Console.WriteLine("Trace: " + msg);
+        }
+        public static void LogInformation(string msg)
+        {
+            Console.WriteLine("Information: " + msg);
+        }
+        public static void LogNotice(string msg)
+        {
+            Console.WriteLine("Notice: " + msg);
         }
 
         public static void LogUsefulException(Exception e)
@@ -52,12 +48,12 @@ namespace Shadowsocks.Controller
                 }
                 else
                 {
-                    Console.WriteLine(e);
+                    LogError(e.ToString());
                 }
             }
             else
             {
-                Console.WriteLine(e);
+                LogTrace(e.ToString());
             }
         }
 

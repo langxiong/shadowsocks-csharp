@@ -286,7 +286,7 @@ namespace Shadowsocks.Controller
 
         protected void SaveConfig(Configuration newConfig)
         {
-            Configuration.Save(newConfig);
+            // Configuration.Save(newConfig);
             Reload();
         }
 

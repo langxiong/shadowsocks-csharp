@@ -86,7 +86,7 @@ namespace Shadowsocks.Controller
                 remote = new Socket(ipAddress.AddressFamily,
                     SocketType.Stream, ProtocolType.Tcp);
                 remote.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true);
-
+              
                 // Connect to the remote endpoint.
                 remote.BeginConnect(remoteEP,
                     new AsyncCallback(ConnectCallback), null);
@@ -159,10 +159,8 @@ namespace Shadowsocks.Controller
             {
                 // Complete the connection.
                 remote.EndConnect(ar);
-
-                //Console.WriteLine("Socket connected to {0}",
-                //    remote.RemoteEndPoint.ToString());
-
+                string msg = "[Local] remote[" + remote.LocalEndPoint.ToString() + "] connect to remoteEP";
+                Logging.LogTrace(msg);
                 HandshakeReceive();
             }
             catch (Exception e)
@@ -191,7 +189,7 @@ namespace Shadowsocks.Controller
                         response = new byte[] { 0, 91 };
                         Console.WriteLine("socks 5 protocol error");
                     }
-                    connection.BeginSend(response, 0, response.Length, 0, new AsyncCallback(HandshakeSendCallback), null);
+                    connection.BeginSend(response, 0, response.Length, 0, new AsyncCallback(HandshakeSendCallback), null);                
                 }
                 else
                 {
@@ -213,8 +211,10 @@ namespace Shadowsocks.Controller
             }
             try
             {
-                connection.EndSend(ar);
-
+                int sendByte = connection.EndSend(ar);
+                string msg = "[Local] HandshakeReceive() connection send response{ 5, 0} sendByte[" + sendByte
+                      + "] bind on remote[" + remote.LocalEndPoint.ToString() + "]";
+                Logging.LogTrace(msg);
                 // +----+-----+-------+------+----------+----------+
                 // |VER | CMD |  RSV  | ATYP | DST.ADDR | DST.PORT |
                 // +----+-----+-------+------+----------+----------+
@@ -241,7 +241,9 @@ namespace Shadowsocks.Controller
             try
             {
                 int bytesRead = connection.EndReceive(ar);
-
+                string msg = "[Local] handshakeReceive2Callback() connection recv bytesRead["
+                    + bytesRead + "] with remote[" + remote.LocalEndPoint.ToString() + "]";
+                Logging.LogTrace(msg);
                 if (bytesRead > 0)
                 {
                     byte[] response = { 5, 0, 0, 1, 0, 0, 0, 0, 0, 0 };
@@ -269,7 +271,12 @@ namespace Shadowsocks.Controller
             }
             try
             {
-                connection.EndReceive(ar);
+                // TODO 是否需要恢复EndReceive的调用.
+                int sendByte = connection.EndSend(ar);
+                // connection.EndReceive(ar);
+                string msg = "[Local] StartPipe() connection send response{ 5, 0, 0, 1, 0, 0, 0, 0, 0, 0 } sendByte" + sendByte + "] with remote[" + 
+                    remote.LocalEndPoint.ToString() + "]";
+                Logging.LogTrace(msg);
                 remote.BeginReceive(remoteRecvBuffer, 0, RecvSize, 0,
                     new AsyncCallback(PipeRemoteReceiveCallback), null);
                 connection.BeginReceive(connetionRecvBuffer, 0, RecvSize, 0,
@@ -291,7 +298,6 @@ namespace Shadowsocks.Controller
             try
             {
                 int bytesRead = remote.EndReceive(ar);
-
                 if (bytesRead > 0)
                 {
                     int bytesToSend;
@@ -303,7 +309,10 @@ namespace Shadowsocks.Controller
                         }
                         encryptor.Decrypt(remoteRecvBuffer, bytesRead, remoteSendBuffer, out bytesToSend);
                     }
-                    connection.BeginSend(remoteSendBuffer, 0, bytesToSend, 0, new AsyncCallback(PipeConnectionSendCallback), null);
+                    string msg = "[Local] PipeRemoteReceiveCallback() remote[" + remote.LocalEndPoint.ToString() + "] receive byteRead[" + bytesRead +
+                    "] from remote server call connection send with decryption bytesToSend[" + bytesToSend +"]";
+                    Logging.LogTrace(msg);
+                    connection.BeginSend(remoteSendBuffer, 0, bytesToSend, 0, new AsyncCallback(PipeConnectionSendCallback), null);                  
                 }
                 else
                 {
@@ -329,7 +338,6 @@ namespace Shadowsocks.Controller
             try
             {
                 int bytesRead = connection.EndReceive(ar);
-
                 if (bytesRead > 0)
                 {
                     int bytesToSend;
@@ -341,7 +349,10 @@ namespace Shadowsocks.Controller
                         }
                         encryptor.Encrypt(connetionRecvBuffer, bytesRead, connetionSendBuffer, out bytesToSend);
                     }
-                    remote.BeginSend(connetionSendBuffer, 0, bytesToSend, 0, new AsyncCallback(PipeRemoteSendCallback), null);
+                    string msg = "[Local] PipeConnectionReceiveCallback() connection receive byteRead[" + bytesRead + "] from local call remote[" +
+                        remote.LocalEndPoint.ToString() + "] send encrypted bytesToSend[" + bytesToSend + "]";
+                    Logging.LogTrace(msg);
+                    remote.BeginSend(connetionSendBuffer, 0, bytesToSend, 0, new AsyncCallback(PipeRemoteSendCallback), null);                  
                 }
                 else
                 {
@@ -365,7 +376,10 @@ namespace Shadowsocks.Controller
             }
             try
             {
-                remote.EndSend(ar);
+                int sendByte = remote.EndSend(ar);
+                string msg = "[Local] PipeRemoteSendCallback() remote[" + remote.LocalEndPoint.ToString() + "] send sendByte[" + sendByte +
+                       "] with content from connection]";
+                Logging.LogTrace(msg);
                 connection.BeginReceive(this.connetionRecvBuffer, 0, RecvSize, 0,
                     new AsyncCallback(PipeConnectionReceiveCallback), null);
             }
@@ -384,7 +398,10 @@ namespace Shadowsocks.Controller
             }
             try
             {
-                connection.EndSend(ar);
+                int sendByte = connection.EndSend(ar);
+                string msg = "[Local] connection send sendByte[" + sendByte +
+                       "] with response from remote[" + remote.LocalEndPoint.ToString() + "]";
+                Logging.LogTrace(msg);
                 remote.BeginReceive(this.remoteRecvBuffer, 0, RecvSize, 0,
                     new AsyncCallback(PipeRemoteReceiveCallback), null);
             }
